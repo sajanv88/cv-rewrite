@@ -18,7 +18,7 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-auto}
       # Anthropic (leave empty to use Ollama).
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
       MAX_TOKENS: ${MAX_TOKENS:-16000}
       # Ollama. From inside the container, reach the host's Ollama via
       # host.docker.internal (not localhost).

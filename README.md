@@ -15,6 +15,8 @@ It runs on either **Anthropic Claude** (cloud) or a **local Ollama model** — y
 choice, via one environment variable. The whole app ships as a **single Docker
 image**: FastAPI serves both the JSON API and the React web app from one port.
 
+> 📖 **Read the full story:** [I built an open source CV rewriter with Claude and FastAPI — here's what I learned](https://medium.com/@sajanvtech/i-built-an-open-source-cv-rewriter-with-claude-and-fastapi-here-is-what-i-learned-f37a8431bc89)
+
 ---
 
 ## Contents
@@ -174,7 +176,7 @@ Create a `.env` file in the repo root (Compose substitutes these automatically):
 # Cloud
 LLM_PROVIDER=auto
 ANTHROPIC_API_KEY=sk-ant-...
-# ANTHROPIC_MODEL=claude-opus-4-8
+# ANTHROPIC_MODEL=claude-haiku-4-5-20251001
 
 # ...or local Ollama (leave the key empty)
 # LLM_PROVIDER=ollama
