@@ -30,6 +30,7 @@ image**: FastAPI serves both the JSON API and the React web app from one port.
 - [Using the app](#using-the-app)
 - [API reference](#api-reference)
 - [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
@@ -321,3 +322,9 @@ Returns `{"status":"ok"}`.
 | "Could not extract any text from the CV PDF" (Ollama) | The PDF is scanned/image-only — use the Anthropic provider. |
 | `502` from `/api/rewrite` | Upstream AI error (bad/blocked key, rate limit, refusal). Check the API logs. |
 | The app returns `404` at `/` | No built SPA present — build the UI (`pnpm run build`) or run via Docker. |
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE.md) — © 2026 Sajankumar Vijayan.
