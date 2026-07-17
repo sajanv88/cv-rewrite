@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  /* Radius scale — the card component references var(--radius-4xl) directly. */
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 8px);
+  --radius-4xl: calc(var(--radius) + 12px);
+}
+
+/* Map Tailwind color utilities (bg-card, text-muted-foreground, …) to the live
+   CSS variables below, so .dark overrides cascade. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  --background: oklch(0.995 0.002 90);
+  --foreground: oklch(0.18 0.01 60);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.01 60);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.01 60);
+  --primary: oklch(0.55 0.16 32);
+  --primary-foreground: oklch(0.99 0.005 90);
+  --secondary: oklch(0.96 0.008 70);
+  --secondary-foreground: oklch(0.28 0.02 45);
+  --muted: oklch(0.965 0.006 75);
+  --muted-foreground: oklch(0.52 0.015 55);
+  --accent: oklch(0.95 0.02 55);
+  --accent-foreground: oklch(0.3 0.04 40);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0.005 90);
+  --border: oklch(0.9 0.008 70);
+  --input: oklch(0.92 0.006 70);
+  --ring: oklch(0.55 0.16 32);
+}
+
+.dark {
+  --background: oklch(0.17 0.008 60);
+  --foreground: oklch(0.95 0.005 80);
+  --card: oklch(0.21 0.01 55);
+  --card-foreground: oklch(0.95 0.005 80);
+  --popover: oklch(0.21 0.01 55);
+  --popover-foreground: oklch(0.95 0.005 80);
+  --primary: oklch(0.68 0.15 35);
+  --primary-foreground: oklch(0.2 0.02 40);
+  --secondary: oklch(0.27 0.012 55);
+  --secondary-foreground: oklch(0.95 0.005 80);
+  --muted: oklch(0.27 0.012 55);
+  --muted-foreground: oklch(0.68 0.01 65);
+  --accent: oklch(0.3 0.025 45);
+  --accent-foreground: oklch(0.95 0.005 80);
+  --destructive: oklch(0.63 0.2 25);
+  --destructive-foreground: oklch(0.98 0.005 80);
+  --border: oklch(0.3 0.01 55);
+  --input: oklch(0.32 0.01 55);
+  --ring: oklch(0.68 0.15 35);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground;
+  }
+  body {
+    font-family: var(--font-sans);
+  }
+}

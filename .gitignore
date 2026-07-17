@@ -1,0 +1,74 @@
+# ---------------------------------------------------------------------------
+# Environment & secrets
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.local
+
+# ---------------------------------------------------------------------------
+# Node / pnpm (cvrewriteui)
+# ---------------------------------------------------------------------------
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+build/
+dist/
+.react-router/
+.vite/
+# SPA bundle copied into the API by `pnpm run build` (see cvrewriteui/scripts).
+api/static/
+
+# ---------------------------------------------------------------------------
+# Python / uv (api)
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[oc]
+*.egg-info/
+.venv/
+venv/
+env/
+wheels/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------------------
+# Caches & logs
+# ---------------------------------------------------------------------------
+*.log
+.cache/
+*.tsbuildinfo
+
+# ---------------------------------------------------------------------------
+# Editors / IDEs
+# ---------------------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# ---------------------------------------------------------------------------
+# OS files
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+devplans
+cv_samples
+.claude
+
+project_summary_of_done.md
+.agents
+skills-lock.json
+.vscode

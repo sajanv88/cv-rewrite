@@ -1,0 +1,31 @@
+# Runs the whole app — FastAPI serves both the JSON API and the built React SPA
+# from one container, one origin.
+#
+#   # Cloud (Anthropic):
+#   ANTHROPIC_API_KEY=sk-ant-... docker compose up --build
+#
+#   # Local (Ollama) — run `ollama serve` on the host, then:
+#   LLM_PROVIDER=ollama docker compose up --build
+#
+# Then open http://localhost:8000
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      LLM_PROVIDER: ${LLM_PROVIDER:-auto}
+      # Anthropic (leave empty to use Ollama).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
+      MAX_TOKENS: ${MAX_TOKENS:-16000}
+      # Ollama. From inside the container, reach the host's Ollama via
+      # host.docker.internal (not localhost).
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
+    # Needed for host.docker.internal on Linux (already works on Docker Desktop).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

@@ -1,0 +1,43 @@
+# Build context is the repo root. Keep it small and never ship secrets or
+# host-built artifacts — the image rebuilds everything itself.
+
+# git / editors (** so nested ones like api/.git are excluded too)
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+
+# node (cvrewriteui) — reinstalled/rebuilt in the image
+**/node_modules
+**/.react-router
+**/.pnpm-store
+
+# build outputs — regenerated in the image
+**/build
+**/dist
+api/static
+
+# dev tooling & local samples — never needed in the image, keep the context lean
+**/.claude
+**/.agents
+**/skills-lock.json
+cv_samples
+devplans
+
+# python (api) — venv & caches are rebuilt in the image
+**/.venv
+**/__pycache__
+**/*.py[oc]
+**/.pytest_cache
+**/.ruff_cache
+**/*.egg-info
+
+# secrets & local env (keep the example)
+**/.env
+**/.env.*
+!**/.env.example
+
+# docker / compose (not needed inside the image)
+Dockerfile
+.dockerignore
+docker-compose.yml
