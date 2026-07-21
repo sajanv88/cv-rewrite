@@ -12,8 +12,10 @@ Upload your **CV (PDF)** and a **job description**, and CV Rewrite gives you:
   complete training guide with model STAR answers grounded in your real experience.
 
 It runs on either **Anthropic Claude** (cloud) or a **local Ollama model** — your
-choice, via one environment variable. The whole app ships as a **single Docker
-image**: FastAPI serves both the JSON API and the React web app from one port.
+choice, via one environment variable. It can also be hosted publicly with **no
+server-side key** — each visitor brings their own (encrypted in their browser).
+The whole app ships as a **single Docker image**: FastAPI serves both the JSON API
+and the React web app from one port, behind a strict Content Security Policy.
 
 > 📖 **Read the full story:** [I built an open source CV rewriter with Claude and FastAPI — here's what I learned](https://medium.com/@sajanvtech/i-built-an-open-source-cv-rewriter-with-claude-and-fastapi-here-is-what-i-learned-f37a8431bc89)
 
@@ -27,6 +29,7 @@ image**: FastAPI serves both the JSON API and the React web app from one port.
 - [Quick start (Docker)](#quick-start-docker)
 - [Choosing the AI provider](#choosing-the-ai-provider)
 - [Configuration](#configuration)
+- [Security and BYOK](#security-and-byok)
 - [Docker deployment](#docker-deployment)
 - [Local development](#local-development)
 - [Using the app](#using-the-app)
@@ -77,7 +80,7 @@ cvrewrite/
 ├── Dockerfile              # single multi-stage build (SPA + API → one image)
 ├── docker-compose.yml      # one "app" service on port 8000
 ├── api/                    # FastAPI backend (uv project)
-│   ├── main.py             # entry: DI container, routes, /health, serves the SPA
+│   ├── main.py             # entry: DI container, routes, security headers, serves the SPA
 │   ├── cv_coach.md         # the AI system prompt (rubric, thresholds, rules)
 │   ├── .env.example        # copy to .env
 │   └── src/
@@ -160,6 +163,35 @@ Frontend build-time variable:
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `VITE_API_URL` | `""` (same origin) | Point the SPA at an API on a different origin (split deploys) |
+
+---
+
+## Security and BYOK
+
+**Security headers.** Every response (API and SPA) carries a strict Content
+Security Policy plus `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: strict-origin-when-cross-origin`, and a locked-down
+`Permissions-Policy`. The CSP uses `script-src 'self'` with per-build SHA-256
+hashes for the SPA's inline bootstrap scripts — **no `'unsafe-inline'`**. Fonts
+are self-hosted (no third-party CDN), so `font-src` / `style-src` stay
+same-origin.
+
+**Bring your own key (BYOK).** You can host CV Rewrite publicly without putting an
+Anthropic key on the server — each visitor supplies their own:
+
+- Deploy with `LLM_PROVIDER=anthropic` and **no** `ANTHROPIC_API_KEY`. The app
+  then asks each user for their key on first use (the request `GET /api/config`
+  reports `requires_api_key: true`).
+- The key is encrypted (AES-256-GCM) and stored **only in the user's browser**
+  (IndexedDB). It's sent with each request as the `X-Anthropic-Api-Key` header;
+  the server uses it only to call Anthropic for that request and never stores or
+  logs it.
+- When a server key **is** set (or Ollama is the provider), nothing changes — the
+  first-use dialog never appears. Users can still optionally supply their own key
+  via the **API key** button (top-right).
+
+> BYOK uses the Web Crypto API, which needs a **secure context** — serve the app
+> over HTTPS in production (localhost is exempt during development).
 
 ---
 
@@ -283,11 +315,24 @@ cd ../api && uv run fastapi run main.py   # http://127.0.0.1:8000 serves UI + AP
    and a day-of checklist) and download it.
 6. Use **Print match score report** to print/save just the score report.
 
+> If the app is deployed in [BYOK](#security-and-byok) mode, you're asked for your
+> Anthropic API key on first use. Manage it anytime via the **API key** button in
+> the top-right.
+
 ---
 
 ## API reference
 
 Interactive docs at `/docs` (Swagger) and `/redoc` when the app is running.
+
+Both `POST` endpoints accept an optional **`X-Anthropic-Api-Key`** header (BYOK);
+when present, the server uses that key for the request instead of its own.
+
+### `GET /api/config`
+
+Returns `{ "requires_api_key": bool }` — `true` when the server has no key of its
+own and the client must supply one (BYOK). The SPA calls this on load to decide
+whether to prompt for a key.
 
 ### `POST /api/rewrite`
 
@@ -324,6 +369,9 @@ Returns `{"status":"ok"}`.
 | "Could not extract any text from the CV PDF" (Ollama) | The PDF is scanned/image-only — use the Anthropic provider. |
 | `502` from `/api/rewrite` | Upstream AI error (bad/blocked key, rate limit, refusal). Check the API logs. |
 | The app returns `404` at `/` | No built SPA present — build the UI (`pnpm run build`) or run via Docker. |
+| `400 No Anthropic API key configured. Provide one via the app.` | [BYOK](#security-and-byok) deployment — enter your Anthropic key in the app's key dialog. |
+| The key won't save / "Secure storage is unavailable" | Web Crypto needs a secure context — serve over HTTPS (localhost is fine). |
+| `script-src` CSP error after rebuilding the SPA | Restart the API so it recomputes the inline-script hashes from the new `index.html`. |
 
 ---
 
