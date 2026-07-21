@@ -27,10 +27,18 @@ _USER_INSTRUCTIONS = "Analyze the attached CV (PDF).\n\n" + USER_INSTRUCTIONS
 class AnthropicCvCoach:
     """Concrete ``CvCoachService`` using Claude with structured JSON output."""
 
-    def __init__(self, api_key: str, model: str, max_tokens: int) -> None:
-        # An empty key would *shadow* an ANTHROPIC_API_KEY env var / `ant` profile,
-        # so fall back to None and let the SDK resolve credentials itself.
-        self._client = anthropic.Anthropic(api_key=api_key or None)
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        max_tokens: int,
+        api_key_override: str | None = None,
+    ) -> None:
+        # A per-request BYOK key (api_key_override) wins over the configured key.
+        # An empty value falls back to None so the SDK can resolve credentials
+        # itself (env var / `ant` profile) instead of being shadowed by "".
+        key = (api_key_override or api_key or "").strip()
+        self._client = anthropic.Anthropic(api_key=key or None)
         self._model = model
         self._max_tokens = max_tokens
         self._system = load_system_prompt()

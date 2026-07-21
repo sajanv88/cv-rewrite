@@ -1,15 +1,18 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 import {
   FileTextIcon,
+  KeyRoundIcon,
   SparklesIcon,
   UploadIcon,
   XIcon,
 } from "lucide-react"
 
 import type { Route } from "./+types/home"
-import { rewriteCv, type RewriteResponse } from "~/lib/api"
+import { fetchConfig, rewriteCv, type RewriteResponse } from "~/lib/api"
+import { useApiKey } from "~/hooks/use-api-key"
 import { cn } from "~/lib/utils"
+import { ApiKeyDialog } from "~/components/ApiKeyDialog"
 import { Results } from "~/components/results"
 import {
   Attachment,
@@ -52,9 +55,11 @@ function formatBytes(n: number): string {
 function Shell({
   children,
   wide = false,
+  onOpenKeyDialog,
 }: {
-  children: React.ReactNode
+  children: ReactNode
   wide?: boolean
+  onOpenKeyDialog?: () => void
 }) {
   return (
     <main
@@ -64,9 +69,22 @@ function Shell({
       )}
     >
       <header className="flex flex-col gap-2 print:hidden">
-        <div className="flex items-center gap-2">
-          <SparklesIcon className="size-5 text-primary" />
-          <h1 className="text-2xl font-semibold tracking-tight">CV Rewrite</h1>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <SparklesIcon className="size-5 text-primary" />
+            <h1 className="text-2xl font-semibold tracking-tight">CV Rewrite</h1>
+          </div>
+          {onOpenKeyDialog && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenKeyDialog}
+              className="shrink-0"
+            >
+              <KeyRoundIcon />
+              API key
+            </Button>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Upload your CV and the job description. We rewrite your CV for the role —
@@ -85,6 +103,14 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<RewriteResponse | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const apiKey = useApiKey()
+  const [requiresKey, setRequiresKey] = useState(false)
+  const [keyDialogOpen, setKeyDialogOpen] = useState(false)
+
+  useEffect(() => {
+    fetchConfig().then((c) => setRequiresKey(c.requiresApiKey))
+  }, [])
 
   function pickFile(f: File | null) {
     if (!f) return
@@ -123,35 +149,40 @@ export default function Home() {
     setJd("")
   }
 
-  if (result) {
-    const twoColumn = Boolean(result.rewritten_cv && result.pdf_base64)
-    return (
-      <Shell wide={twoColumn}>
-        <Results data={result} jobDescription={jd} onReset={reset} />
-      </Shell>
-    )
-  }
-
-  if (loading) {
+  // Still resolving whether a key is stored — render a bare spinner so the
+  // first-time dialog doesn't flash before we know.
+  if (apiKey.status === "loading") {
     return (
       <Shell>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
-            <Spinner className="size-8 text-primary" />
-            <div className="flex flex-col gap-1">
-              <p className="font-medium">Analyzing your CV against the role…</p>
-              <p className="text-sm text-muted-foreground">
-                Scoring the fit and rewriting your CV. This can take up to a minute.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex justify-center py-16">
+          <Spinner className="size-8 text-primary" />
+        </div>
       </Shell>
     )
   }
 
-  return (
-    <Shell>
+  const wide = Boolean(result && result.rewritten_cv && result.pdf_base64)
+  const mustProvideKey = requiresKey && apiKey.status === "missing"
+
+  let content: ReactNode
+  if (result) {
+    content = <Results data={result} jobDescription={jd} onReset={reset} />
+  } else if (loading) {
+    content = (
+      <Card>
+        <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
+          <Spinner className="size-8 text-primary" />
+          <div className="flex flex-col gap-1">
+            <p className="font-medium">Analyzing your CV against the role…</p>
+            <p className="text-sm text-muted-foreground">
+              Scoring the fit and rewriting your CV. This can take up to a minute.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  } else {
+    content = (
       <Card>
         <CardHeader>
           <CardTitle>Get started</CardTitle>
@@ -233,6 +264,35 @@ export default function Home() {
           </Button>
         </CardContent>
       </Card>
-    </Shell>
+    )
+  }
+
+  return (
+    <>
+      <Shell wide={wide} onOpenKeyDialog={() => setKeyDialogOpen(true)}>
+        {content}
+      </Shell>
+
+      {/* Optional, user-initiated key management. */}
+      <ApiKeyDialog
+        open={keyDialogOpen}
+        mode="change"
+        hasKey={apiKey.status === "ready"}
+        onOpenChange={setKeyDialogOpen}
+        onSave={async (k) => {
+          await apiKey.save(k)
+          setKeyDialogOpen(false)
+        }}
+        onClear={async () => {
+          await apiKey.clear()
+          setKeyDialogOpen(false)
+        }}
+      />
+
+      {/* BYOK deployments with no stored key: blocking, non-dismissible. */}
+      {mustProvideKey && (
+        <ApiKeyDialog open mode="first-time" onSave={apiKey.save} />
+      )}
+    </>
   )
 }

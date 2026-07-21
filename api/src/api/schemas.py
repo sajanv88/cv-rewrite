@@ -198,6 +198,14 @@ class GuideResponse(BaseModel):
     pdf_filename: str
 
 
+class ConfigResponse(BaseModel):
+    """Public runtime config the SPA needs before the first request."""
+
+    # True when the server has no usable Anthropic key of its own, so the user
+    # must supply one (BYOK). False when a server key is set or Ollama is used.
+    requires_api_key: bool
+
+
 def _gap_to_domain(g: GapDTO) -> domain.Gap:
     return domain.Gap(
         requirement=g.requirement,

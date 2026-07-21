@@ -5,8 +5,39 @@
 // paths to the API (see vite.config.ts). Set VITE_API_URL only to point the
 // app at an API on a different origin.
 
+import { loadApiKey } from "~/lib/apikey-store"
+
 export const API_BASE_URL: string =
   (import.meta.env.VITE_API_URL as string | undefined) ?? ""
+
+/**
+ * Build request headers, attaching the user's Anthropic key (BYOK) as
+ * `X-Anthropic-Api-Key` when one is stored. If none is stored, the header is
+ * omitted and the server uses its own key (or Ollama) — nothing changes.
+ */
+async function buildHeaders(base?: Record<string, string>): Promise<Headers> {
+  const headers = new Headers(base)
+  const key = await loadApiKey()
+  if (key) headers.set("X-Anthropic-Api-Key", key)
+  return headers
+}
+
+export interface AppConfig {
+  /** True when the server has no key of its own, so the user must supply one. */
+  requiresApiKey: boolean
+}
+
+/** Ask the server whether the user must provide their own Anthropic key. */
+export async function fetchConfig(): Promise<AppConfig> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/config`)
+    if (!res.ok) return { requiresApiKey: false }
+    const body = (await res.json()) as { requires_api_key?: boolean }
+    return { requiresApiKey: Boolean(body.requires_api_key) }
+  } catch {
+    return { requiresApiKey: false }
+  }
+}
 
 export type Verdict = "STRONG" | "PARTIAL" | "WEAK" | "NOT_RECOMMENDED"
 
@@ -85,6 +116,7 @@ export async function rewriteCv(
   try {
     res = await fetch(`${API_BASE_URL}/api/rewrite`, {
       method: "POST",
+      headers: await buildHeaders(),
       body: form,
     })
   } catch {
@@ -133,7 +165,7 @@ export async function buildInterviewGuide(
   try {
     res = await fetch(`${API_BASE_URL}/api/interview-guide`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await buildHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(body),
     })
   } catch {
