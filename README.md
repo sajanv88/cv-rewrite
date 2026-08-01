@@ -1,23 +1,15 @@
 # CV Rewrite
 
-Upload your **CV (PDF)** and a **job description**, and CV Rewrite gives you:
+Upload your CV as a PDF along with a job description, and CV Rewrite gives you:
 
-- ✍️ **An honestly rewritten CV** — reframed and re-aligned to the role, **never
-  fabricated** — delivered as a downloadable PDF.
-- 📊 **A match score report** — an overall score out of 100, a verdict, per-dimension
-  scores, honest gaps, and ATS risk flags.
-- 🎯 **Interview preparation** — likely questions, talking points, and topics to study
-  (when the fit is strong enough).
-- 🎓 **A full interview prep guide (PDF)** — one click turns the prep report into a
-  complete training guide with model STAR answers grounded in your real experience.
+- An honestly rewritten CV, reframed and realigned to the role but never fabricated, delivered as a downloadable PDF.
+- A match score report: an overall score out of 100, a verdict, per-dimension scores, honest gaps, and ATS risk flags.
+- Interview preparation when the fit is strong enough: likely questions, talking points, and topics to study.
+- A full interview prep guide as a PDF. One click turns the prep report into a complete training guide with model STAR answers grounded in your real experience.
 
-It runs on either **Anthropic Claude** (cloud) or a **local Ollama model** — your
-choice, via one environment variable. It can also be hosted publicly with **no
-server-side key** — each visitor brings their own (encrypted in their browser).
-The whole app ships as a **single Docker image**: FastAPI serves both the JSON API
-and the React web app from one port, behind a strict Content Security Policy.
+It runs on Anthropic Claude in the cloud or a local Ollama model, your choice, set with one environment variable. You can also host it publicly with no server-side key at all: each visitor brings their own, encrypted in their browser. The whole thing ships as a single Docker image. FastAPI serves the JSON API and the React app from one port, behind a strict Content Security Policy.
 
-> 📖 **Read the full story:** [I built an open source CV rewriter with Claude and FastAPI — here's what I learned](https://medium.com/@sajanvtech/i-built-an-open-source-cv-rewriter-with-claude-and-fastapi-here-is-what-i-learned-f37a8431bc89)
+> **Read the full story:** [I built an open source CV rewriter with Claude and FastAPI — here's what I learned](https://medium.com/@sajanvtech/i-built-an-open-source-cv-rewriter-with-claude-and-fastapi-here-is-what-i-learned-f37a8431bc89)
 
 ---
 
@@ -56,12 +48,9 @@ flowchart LR
     API -->|JSON + base64 PDF| U
 ```
 
-- The CV is analysed **once**; nothing is stored (no database, no accounts).
-- The rewritten CV appears only when the score is **≥ 40**; interview prep only when
-  it's **≥ 70**. These honesty thresholds and the scoring rubric live in
-  [`api/cv_coach.md`](api/cv_coach.md).
-- With **Anthropic**, the CV PDF is sent to Claude natively. With **Ollama**, the CV
-  text is extracted first (via `pypdf`) — so *scanned/image* PDFs need Anthropic.
+- The CV is analysed once. Nothing is stored: no database, no accounts.
+- The rewritten CV appears only when the score is 40 or higher; interview prep only when it's 70 or higher. These honesty thresholds and the scoring rubric live in [`api/cv_coach.md`](api/cv_coach.md).
+- With Anthropic, the CV PDF goes to Claude natively. With Ollama, the CV text is extracted first (via `pypdf`), so scanned or image-only PDFs need Anthropic.
 
 ## Tech stack
 
@@ -87,7 +76,7 @@ cvrewrite/
 │       ├── domain/         # pure-Python entities, ports, use cases
 │       ├── infra/          # Anthropic + Ollama adapters, PDF renderer, settings
 │       ├── config/         # Punq container (picks the AI provider)
-│       └── api/            # routers + DTOs
+│       └── api/             # routers + DTOs
 └── cvrewriteui/            # React Router SPA (pnpm project)
     └── app/                # routes, components, API client, styles
 ```
@@ -114,8 +103,7 @@ LLM_PROVIDER=ollama docker compose up --build
 Open **http://localhost:8000** — the web app and the API docs (`/docs`) are both
 there.
 
-> Prefer a file over inline env vars? Create a `.env` in the repo root (Compose reads
-> it automatically) — see [Docker deployment](#docker-deployment).
+> Prefer a file over inline env vars? Create a `.env` in the repo root; Compose reads it automatically. See [Docker deployment](#docker-deployment).
 
 ---
 
@@ -130,14 +118,11 @@ there.
 | `anthropic` | Always Claude. Requires `ANTHROPIC_API_KEY`. |
 | `ollama` | Always a local Ollama model. Requires `ollama serve` + a pulled model. |
 
-So the simple rule: **set an Anthropic key → Anthropic; configure Ollama with no key
-→ Ollama**; or force either explicitly.
+The simple rule: set an Anthropic key and it uses Anthropic; configure Ollama with no key and it uses Ollama. Or force either explicitly.
 
 **Notes**
-- Ollama quality depends on the model — use a capable instruct model that honours JSON
-  schemas (recent Llama / Qwen / Mistral). Set it with `OLLAMA_MODEL`.
-- Local models read **text**, so image-only / scanned PDFs won't work on Ollama — use
-  Anthropic for those.
+- Ollama quality depends on the model. Use a capable instruct model that honours JSON schemas (recent Llama, Qwen, or Mistral), and set it with `OLLAMA_MODEL`.
+- Local models read text only, so image-only or scanned PDFs won't work on Ollama. Use Anthropic for those.
 
 ---
 
@@ -168,37 +153,21 @@ Frontend build-time variable:
 
 ## Security and BYOK
 
-**Security headers.** Every response (API and SPA) carries a strict Content
-Security Policy plus `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
-`Referrer-Policy: strict-origin-when-cross-origin`, and a locked-down
-`Permissions-Policy`. The CSP uses `script-src 'self'` with per-build SHA-256
-hashes for the SPA's inline bootstrap scripts — **no `'unsafe-inline'`**. Fonts
-are self-hosted (no third-party CDN), so `font-src` / `style-src` stay
-same-origin.
+**Security headers.** Every response, API and SPA, carries a strict Content Security Policy plus `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, and a locked-down `Permissions-Policy`. The CSP uses `script-src 'self'` with per-build SHA-256 hashes for the SPA's inline bootstrap scripts. No `'unsafe-inline'`. Fonts are self-hosted (no third-party CDN), so `font-src` and `style-src` stay same-origin.
 
-**Bring your own key (BYOK).** You can host CV Rewrite publicly without putting an
-Anthropic key on the server — each visitor supplies their own:
+**Bring your own key (BYOK).** You can host CV Rewrite publicly without putting an Anthropic key on the server. Each visitor supplies their own:
 
-- Deploy with `LLM_PROVIDER=anthropic` and **no** `ANTHROPIC_API_KEY`. The app
-  then asks each user for their key on first use (the request `GET /api/config`
-  reports `requires_api_key: true`).
-- The key is encrypted (AES-256-GCM) and stored **only in the user's browser**
-  (IndexedDB). It's sent with each request as the `X-Anthropic-Api-Key` header;
-  the server uses it only to call Anthropic for that request and never stores or
-  logs it.
-- When a server key **is** set (or Ollama is the provider), nothing changes — the
-  first-use dialog never appears. Users can still optionally supply their own key
-  via the **API key** button (top-right).
+- Deploy with `LLM_PROVIDER=anthropic` and **no** `ANTHROPIC_API_KEY`. The app then asks each user for their key on first use (the request `GET /api/config` reports `requires_api_key: true`).
+- The key is encrypted (AES-256-GCM) and stored only in the user's browser (IndexedDB). It's sent with each request as the `X-Anthropic-Api-Key` header; the server uses it only to call Anthropic for that request and never stores or logs it.
+- When a server key is set (or Ollama is the provider), nothing changes. The first-use dialog never appears. Users can still supply their own key via the API key button in the top right.
 
-> BYOK uses the Web Crypto API, which needs a **secure context** — serve the app
-> over HTTPS in production (localhost is exempt during development).
+> BYOK uses the Web Crypto API, which needs a secure context. Serve the app over HTTPS in production; localhost is exempt during development.
 
 ---
 
 ## Docker deployment
 
-The repo builds to **one image** that serves the SPA and the API together on port
-**8000**. The app is **stateless** — no volumes or database required.
+The repo builds to one image that serves the SPA and the API together on port 8000. The app is stateless: no volumes or database required.
 
 ### Option A — Docker Compose (recommended)
 
@@ -246,21 +215,14 @@ docker run --rm -p 8000:8000 \
 
 ### Using Ollama from inside the container
 
-A container's `localhost` is **not** your host. To reach an Ollama server running on
-the host, use `host.docker.internal`:
+A container's `localhost` is **not** your host. To reach an Ollama server running on the host, use `host.docker.internal`:
 
-- Compose already sets `OLLAMA_HOST=http://host.docker.internal:11434` and adds the
-  `host.docker.internal:host-gateway` mapping (needed on Linux; automatic on Docker
-  Desktop).
-- If you run Ollama in **another container**, put both on the same Docker network and
-  set `OLLAMA_HOST=http://<ollama-service>:11434`.
+- Compose already sets `OLLAMA_HOST=http://host.docker.internal:11434` and adds the `host.docker.internal:host-gateway` mapping (needed on Linux; automatic on Docker Desktop).
+- If you run Ollama in another container, put both on the same Docker network and set `OLLAMA_HOST=http://<ollama-service>:11434`.
 
 ### Behind a reverse proxy (optional)
 
-The app is a single HTTP service on `:8000`, so any reverse proxy (Nginx, Caddy,
-Traefik) can terminate TLS and forward to it. Because the UI calls the API on the
-**same origin** (relative URLs), no CORS or extra config is needed. Health probe:
-`GET /health` → `{"status":"ok"}`.
+The app is a single HTTP service on `:8000`, so any reverse proxy (Nginx, Caddy, Traefik) can terminate TLS and forward to it. Because the UI calls the API on the same origin (relative URLs), no CORS or extra config is needed. Health probe: `GET /health` → `{"status":"ok"}`.
 
 ---
 
@@ -315,9 +277,7 @@ cd ../api && uv run fastapi run main.py   # http://127.0.0.1:8000 serves UI + AP
    and a day-of checklist) and download it.
 6. Use **Print match score report** to print/save just the score report.
 
-> If the app is deployed in [BYOK](#security-and-byok) mode, you're asked for your
-> Anthropic API key on first use. Manage it anytime via the **API key** button in
-> the top-right.
+> If the app is deployed in [BYOK](#security-and-byok) mode, you're asked for your Anthropic API key on first use. Manage it anytime via the API key button in the top right.
 
 ---
 
@@ -325,8 +285,7 @@ cd ../api && uv run fastapi run main.py   # http://127.0.0.1:8000 serves UI + AP
 
 Interactive docs at `/docs` (Swagger) and `/redoc` when the app is running.
 
-Both `POST` endpoints accept an optional **`X-Anthropic-Api-Key`** header (BYOK);
-when present, the server uses that key for the request instead of its own.
+Both `POST` endpoints accept an optional `X-Anthropic-Api-Key` header (BYOK). When present, the server uses that key for the request instead of its own.
 
 ### `GET /api/config`
 
@@ -377,4 +336,4 @@ Returns `{"status":"ok"}`.
 
 ## License
 
-Released under the [MIT License](LICENSE.md) — © 2026 Sajankumar Vijayan.
+Released under the [MIT License](LICENSE.md) — © 2026 sajanv88.
